@@ -1,0 +1,273 @@
+<!DOCTYPE>
+<html>
+	<head>
+		<script src="http://ajax.googleapis.com/ajax/libs/jquery/1.11.0/jquery.min.js"></script>
+		<script src="http://ajax.googleapis.com/ajax/libs/jqueryui/1.10.4/jquery-ui.min.js"></script>
+		<script type="text/javascript" src="assets/js/paper-full.min.js"></script>
+		<script>
+			var canvas, agentObj = {};
+
+		  $(document).ready(function() {
+		  	canvas = document.getElementById('agent-canvas');
+		  	$(document).on('keydown', '.descriptor input', function(){
+		  		$(this).val($(this).val() % 360);
+		  		console.log(agentObj['vision'][$(this).parent().attr('cone')][$(this).attr('name')]);
+		  		agentObj['vision'][$(this).parent().attr('cone')][$(this).attr('name')] = $(this).val();
+ 
+		  		draw_vision();
+		  	});
+		  	$(document).on('click', '.sig-bit.opt_orange', function(){
+		  		slider_modal($(this));
+		  	}).on('click', '.sig-bit.opt_magenta', function(){
+		  		movement_modal($(this));
+		  	});
+		  });
+		</script>
+		<link rel="stylesheet" type="text/css" href="style.css" />
+		<script>
+			function allowDrop(ev)
+			{
+			ev.preventDefault();
+			}
+
+			function drag(ev)
+			{
+			ev.dataTransfer.setData("Text",ev.target.id);
+			}
+
+			function drop(ev)
+			{
+				ev.preventDefault();
+				var data = ev.dataTransfer.getData('Text');
+				console.log(data);
+				var id = "#"+data;
+				var cone = "";
+				var clone = $.grep($(id).attr('class').split(" "), function(v, i){
+						return v.indexOf('opt_') === 0;
+					}).join();
+
+				var newBit = $("<div class='sig-bit "+ clone +"'></div>");
+				newBit.width(parseInt(Math.random() * (10) + 5));
+				$("#agent .sig").append(newBit);
+				/*
+				if(clone=="opt_orange"){
+					
+					var centre = prompt("What direction would you like the cone?", "0")
+					var degrees = prompt("How Many Degrees?", "90");
+					var color = '#FFA500';//+Math.floor(Math.random()*16777215).toString(16);
+					
+
+					agentObj['vision'] = agentObj['vision'] != undefined? agentObj['vision']: {};
+
+					var length = Object.keys(agentObj['vision']).length? Object.keys(agentObj['vision']).length : 0 ;
+					console.log(agentObj['vision'].length, agentObj);
+					agentObj['vision'][length] = {
+						color: color,
+						angle: degrees,
+						centre: centre
+					};
+					console.log(agentObj);
+
+					draw_vision();
+					cone = ' cone="'+length+'"';
+				}*/
+				
+
+				if(clone=="opt_orange"){
+					
+					var centre = 0;
+					var degrees = 90;
+					var color = '#FFA500';//+Math.floor(Math.random()*16777215).toString(16);
+					var distance = 150;
+					var name = "";
+					
+
+					agentObj['vision'] = agentObj['vision'] != undefined? agentObj['vision']: {};
+
+					var length = Object.keys(agentObj['vision']).length? Object.keys(agentObj['vision']).length : 0 ;
+					console.log(agentObj['vision'].length, agentObj);
+					agentObj['vision'][length] = {
+						color: color,
+						angle: degrees,
+						centre: centre,
+						distance: distance,
+						name: ""
+					};
+
+					draw_vision();
+
+					newBit.attr('cone', length);
+					slider_modal(newBit);
+				}
+				
+				if(clone == "opt_magenta"){
+					agentObj['movement'] = agentObj['movement'] != undefined? agentObj['movement']: {};
+					var length = Object.keys(agentObj['movement']).length;
+					agentObj['movement'][length] = {
+						direction: 0,
+						distance: 1
+					}
+					newBit.attr('movement', length);
+					movement_modal(newBit);
+				}
+				
+				
+			}
+
+			function draw_vision(cone, rotate){
+				vision();
+				var length = Object.keys(agentObj['vision']).length? Object.keys(agentObj['vision']).length : 0 ;
+				var rotator = rotate? rotate : 0
+				for(var i = 0; i < length; i++){
+					if(cone > -1 && i == cone){
+						
+					} else {
+						createSegment("rgba(255,165,0,0.5)", agentObj['vision'][i]['angle'], (agentObj['vision'][i]['centre'] + rotator) % 360, agentObj['vision'][i]['distance']);
+					}
+				}
+				if(cone > -1){
+					createSegment(agentObj['vision'][cone]['color'], agentObj['vision'][cone]['angle'], (agentObj['vision'][cone]['centre'] + rotator) % 360, agentObj['vision'][cone]['distance']);
+				}
+				
+				
+			}
+				
+			function vision(){
+				paper.setup(canvas);
+			  	var vision = new paper.Path.Circle(new paper.Point(400, 250), 150);
+				vision.fillColor = '#383D43';
+				paper.view.draw();
+			} 
+
+			
+			function createSegment(fillcolor, angle, centre, distance){
+			    var c=document.getElementById("agent-canvas");
+			    var centerx = 800 / 2;
+  				var centery = 500 / 2;
+  				var radians = angle * (Math.PI/180);
+  				radians /= 2;
+  				var centreAngle = (270 + parseInt(centre)) % 360;
+  				console.log (centreAngle);
+  				var start = centreAngle * (Math.PI/180) - radians;
+  				var end = centreAngle * (Math.PI/180) + radians;
+			    var ctx=c.getContext("2d");
+			    ctx.fillStyle=fillcolor;
+			    ctx.beginPath();
+			    ctx.moveTo(centerx, centery);
+			    ctx.arc(centerx, centery, distance, start, end);
+			    ctx.lineTo(centerx, centery);
+			    ctx.fill();
+			}
+
+			function slider_modal(elem){
+				var cone = elem.attr('cone');
+				draw_vision(cone);
+				var win = $($.parseHTML('<div class="modal"><div class="inner"><input type="text" name="name"/><p>Angle:</p><div class="holder"><div id="slider1"></div></div><p>Centre:</p><div class="holder"><div id="slider2"></div></div><p>Distance:</p><div class="holder"><div id="slider3"></div></div></div><div class="closer">x</div></div>'));
+				$('body').append(win);
+				var offset = elem.offset();
+				win.css({
+					left: offset.left,
+					top: offset.top
+				});
+				
+				agentObj['vision'][cone]['name'] = agentObj['vision'][cone]['name']? agentObj['vision'][cone]['name'] : "vision_" + cone;
+				win.find('input[name = "name"]').val(agentObj['vision'][cone]['name']).change(function(){
+					agentObj['vision'][cone]['name'] = $(this).val();
+				}).focus();
+				win.find('#slider1').slider({
+					min: 0,
+					max: 360,
+					value: agentObj['vision'][cone]['angle'],
+					change: function(e, ui){
+						agentObj['vision'][cone]['angle'] = ui.value;
+						draw_vision(cone);
+					}
+				});
+				win.find('#slider2').slider({
+					min: 0,
+					max: 360,
+					value: agentObj['vision'][cone]['centre'],
+					change: function(e, ui){
+						agentObj['vision'][cone]['centre'] = ui.value;
+						draw_vision(cone);
+					}
+				});
+				win.find('#slider3').slider({
+					min: 0,
+					max: 250,
+					value: agentObj['vision'][cone]['distance'],
+					change: function(e, ui){
+						agentObj['vision'][cone]['distance'] = ui.value;
+						draw_vision(cone);
+					}
+				});
+
+				win.find('.closer').click(function(){
+					win.remove();
+					draw_vision(-1);
+				});
+				
+			}
+			
+			function movement_modal(elem){
+				var movement = elem.attr('movement');
+				draw_vision(-1,agentObj['movement'][movement]['direction']);
+				$(".agent").css('-webkit-transform', 'rotate(' + agentObj['movement'][movement]['direction'] + 'deg)');
+				var win = $($.parseHTML('<div class="modal"><div class="inner"><input type="text" name="name"/><p>Direction:</p><div class="holder"><div id="slider1"></div></div><div class="closer">x</div></div>'));
+				$('body').append(win);
+				var offset = elem.offset();
+				win.css({
+					left: offset.left,
+					top: offset.top 
+				});
+				win.find('#slider1').slider({
+					min: 0,
+					max: 360,
+					value: agentObj['movement'][movement]['direction'],
+					change: function(e, ui){
+						agentObj['movement'][movement]['direction'] = ui.value;
+						console.log('rotate(' + agentObj['movement'][movement]['direction'] + 'deg)' );
+						$(".agent").css('-webkit-transform', 'rotate(' + agentObj['movement'][movement]['direction'] + 'deg)');
+						draw_vision(-1,agentObj['movement'][movement]['direction']);
+					}
+				});
+				win.find('.closer').click(function(){
+					win.remove();
+					$(".agent").css('-webkit-transform', 'rotate(0deg)');
+					draw_vision();
+				});
+			}
+
+
+		</script>
+		
+	</head>
+	<body class="horde-body">
+		<div class="selectable option opt_orange" id="option3" draggable="true" ondragstart="drag(event)">
+			<div class="inner">
+				Vision
+			</div>
+		</div> 
+		<div class="selectable option opt_magenta" id="option4" draggable="true" ondragstart="drag(event)">
+			<div class="inner">
+				Move
+			</div>
+		</div>
+		<div class="selectable option opt_green" id="option5" draggable="true" ondragstart="drag(event)">
+			<div class="inner">
+				Turn
+			</div>
+		</div>
+
+		<div id="agent" ondrop="drop(event)" ondragover="allowDrop(event)">
+			<canvas id="agent-canvas"></canvas>
+			<div class="agent">
+			</div>
+			<div class="sig">
+
+			</div>
+		</div>
+		<div id="cone-descriptors">
+		</div>
+	</body>
+</html>
